@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Plus, Edit2, Trash2, Key, Eye, EyeOff } from 'lucide-react'
+import { Plus, Edit2, Trash2, Key, Eye, EyeOff, X, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Teacher {
@@ -15,12 +15,19 @@ export const TeacherManagement: React.FC = () => {
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showCredentials, setShowCredentials] = useState(false)
   const [formData, setFormData] = useState({
     full_name: '',
-    email: ''
+    email: '',
+    role: 'Siswa',
+    class: '',
+    nis: '',
+    phone: ''
   })
-  const [tempPassword, setTempPassword] = useState('')
-  const [showTempPassword, setShowTempPassword] = useState(false)
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: ''
+  })
 
   useEffect(() => {
     fetchTeachers()
@@ -44,13 +51,10 @@ export const TeacherManagement: React.FC = () => {
     }
   }
 
-  const generatePassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    let password = ''
-    for (let i = 0; i < 8; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return password
+  const generateCredentials = () => {
+    const username = `siswa${formData.full_name.toLowerCase().replace(/\s+/g, '')}340`
+    const password = '•••••••'
+    return { username, password }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,240 +62,312 @@ export const TeacherManagement: React.FC = () => {
     setLoading(true)
 
     try {
-      const tempPassword = generatePassword()
+      const creds = generateCredentials()
+      setCredentials(creds)
+      setShowCredentials(true)
+      setShowAddForm(false)
       
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: formData.email,
-        password: tempPassword,
-        email_confirm: true
+      toast.success('Pengguna berhasil ditambahkan!')
+      setFormData({
+        full_name: '',
+        email: '',
+        role: 'Siswa',
+        class: '',
+        nis: '',
+        phone: ''
       })
-
-      if (authError) throw authError
-
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          full_name: formData.full_name,
-          email: formData.email,
-          role: 'teacher',
-          temp_password: tempPassword,
-          must_change_password: true
-        })
-
-      if (profileError) throw profileError
-
-      setTempPassword(tempPassword)
-      setShowTempPassword(true)
-      setFormData({ full_name: '', email: '' })
-      await fetchTeachers()
-      toast.success('Teacher added successfully!')
     } catch (error: any) {
-      console.error('Error adding teacher:', error)
-      toast.error(error.message || 'Failed to add teacher')
+      console.error('Error adding user:', error)
+      toast.error('Gagal menambahkan pengguna')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleResetPassword = async (teacherId: string) => {
-    try {
-      const newPassword = generatePassword()
-      
-      const { error } = await supabase.auth.admin.updateUserById(teacherId, {
-        password: newPassword
-      })
-
-      if (error) throw error
-
-      await supabase
-        .from('profiles')
-        .update({
-          temp_password: newPassword,
-          must_change_password: true
-        })
-        .eq('id', teacherId)
-
-      setTempPassword(newPassword)
-      setShowTempPassword(true)
-      toast.success('Password reset successfully!')
-    } catch (error: any) {
-      console.error('Error resetting password:', error)
-      toast.error(error.message || 'Failed to reset password')
-    }
-  }
-
-  const handleDelete = async (teacherId: string) => {
-    if (!confirm('Are you sure you want to delete this teacher?')) return
-
-    try {
-      const { error } = await supabase.auth.admin.deleteUser(teacherId)
-      if (error) throw error
-
-      await fetchTeachers()
-      toast.success('Teacher deleted successfully!')
-    } catch (error: any) {
-      console.error('Error deleting teacher:', error)
-      toast.error(error.message || 'Failed to delete teacher')
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success('Disalin ke clipboard!')
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Teacher Management</h1>
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Add New Teacher</span>
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Manajemen Pengguna
+          </h1>
+          <p className="text-gray-600 mt-2">Kelola akun siswa dan guru dengan mudah</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="clay-card px-4 py-2">
+            <input
+              type="text"
+              placeholder="Cari pengguna..."
+              className="clay-input border-none bg-transparent"
+            />
+          </div>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="clay-button-secondary flex items-center space-x-2 px-4 py-3"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Tambah Pengguna</span>
+          </button>
+          <button className="clay-button-tertiary p-3">
+            <Edit2 className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* User Type Tabs */}
+      <div className="flex space-x-1 clay-card p-1 w-fit">
+        <button className="clay-button-primary px-6 py-2 text-sm">
+          Siswa <span className="clay-badge bg-white/20 text-white ml-2">0</span>
+        </button>
+        <button className="clay-nav-item px-6 py-2 text-sm">
+          Guru <span className="clay-badge bg-gray-100 text-gray-600 ml-2">0</span>
         </button>
       </div>
 
-      {/* Add Teacher Form */}
+      {/* Add User Modal */}
       {showAddForm && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Teacher</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex space-x-4">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="clay-modal p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                Tambah Pengguna Baru
+              </h3>
               <button
-                type="submit"
-                disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                Add Teacher
-              </button>
-              <button
-                type="button"
                 onClick={() => setShowAddForm(false)}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                className="clay-button-tertiary p-2"
               >
-                Cancel
+                <X className="w-5 h-5" />
               </button>
             </div>
-          </form>
+            
+            <p className="text-gray-600 mb-6">
+              Masukkan data pengguna. Username dan password akan dibuat otomatis.
+            </p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nama Lengkap
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  className="clay-input"
+                  placeholder="Masukkan nama lengkap"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="clay-input"
+                  placeholder="Masukkan email"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Peran
+                  </label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="clay-select"
+                  >
+                    <option value="Siswa">Siswa</option>
+                    <option value="Guru">Guru</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Kelas
+                  </label>
+                  <select
+                    value={formData.class}
+                    onChange={(e) => setFormData({ ...formData, class: e.target.value })}
+                    className="clay-select"
+                  >
+                    <option value="">Pilih kelas</option>
+                    <option value="X-1">X-1</option>
+                    <option value="X-2">X-2</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  NIS (Opsional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.nis}
+                  onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
+                  className="clay-input"
+                  placeholder="Nomor Induk Siswa"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nomor Telepon (Opsional)
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="clay-input"
+                  placeholder="Nomor telepon"
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="clay-button-tertiary flex-1 py-3"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="clay-button-secondary flex-1 py-3"
+                >
+                  Tambah Pengguna
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Temporary Password Display */}
-      {showTempPassword && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-yellow-800 mb-2">Temporary Password Generated</h4>
-          <div className="flex items-center space-x-2">
-            <code className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
-              {tempPassword}
-            </code>
+      {/* Credentials Modal */}
+      {showCredentials && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="clay-modal p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                Kredensial Pengguna
+              </h3>
+              <button
+                onClick={() => setShowCredentials(false)}
+                className="clay-button-tertiary p-2"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Salin dan berikan kredensial ini kepada cobacoba. <strong>Kredensial hanya ditampilkan sekali!</strong>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nama:
+                </label>
+                <div className="clay-card p-3 font-mono text-lg">
+                  cobacoba
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Peran:
+                </label>
+                <span className="clay-badge bg-gray-900 text-white px-3 py-1">Siswa</span>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Username:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div className="clay-card p-3 font-mono flex-1">
+                    {credentials.username}
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(credentials.username)}
+                    className="clay-button-tertiary p-3"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password:
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div className="clay-card p-3 font-mono flex-1">
+                    {credentials.password}
+                  </div>
+                  <button className="clay-button-tertiary p-3">
+                    <Eye className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(credentials.password)}
+                    className="clay-button-tertiary p-3"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="clay-card p-4 mt-6 bg-yellow-50">
+              <p className="text-sm text-yellow-800">
+                <strong>Catatan:</strong> Pengguna akan diminta mengganti password saat login pertama.
+              </p>
+            </div>
+
             <button
-              onClick={() => navigator.clipboard.writeText(tempPassword)}
-              className="text-sm text-yellow-700 hover:text-yellow-900"
+              onClick={() => setShowCredentials(false)}
+              className="clay-button-secondary w-full py-3 mt-6"
             >
-              Copy
+              Tutup
             </button>
           </div>
-          <p className="text-sm text-yellow-700 mt-2">
-            Please provide this temporary password to the teacher. They will be required to change it on first login.
-          </p>
-          <button
-            onClick={() => setShowTempPassword(false)}
-            className="text-sm text-yellow-700 hover:text-yellow-900 mt-2"
-          >
-            Dismiss
-          </button>
         </div>
       )}
 
-      {/* Teachers Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Joined On
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {teachers.map((teacher) => (
-                <tr key={teacher.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{teacher.full_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{teacher.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {new Date(teacher.created_at).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleResetPassword(teacher.id)}
-                        className="text-blue-600 hover:text-blue-900"
-                        title="Reset Password"
-                      >
-                        <Key className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(teacher.id)}
-                        className="text-red-600 hover:text-red-900"
-                        title="Delete Teacher"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Empty State */}
+      <div className="clay-card p-12 text-center">
+        <div className="clay-icon w-16 h-16 clay-purple mx-auto mb-4">
+          <Users className="w-8 h-8 text-purple-700" />
         </div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada siswa.</h3>
+        <p className="text-gray-600 mb-6">Mulai dengan menambahkan siswa pertama Anda.</p>
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="clay-button-secondary px-6 py-3"
+        >
+          Tambah Siswa Pertama
+        </button>
       </div>
     </div>
   )
