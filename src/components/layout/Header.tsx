@@ -15,39 +15,41 @@ export const Header: React.FC = () => {
   }
 
   return (
-    <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6">
+    <header className="clay-card h-16 flex items-center justify-between px-6 mx-4 mt-4 mb-6">
       <div className="flex items-center">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">ES</span>
+          <div className="w-10 h-10 clay-icon clay-purple flex items-center justify-center">
+            <span className="text-purple-700 font-bold text-lg">ES</span>
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">English Spark</h1>
+            <h1 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              English Spark
+            </h1>
             <p className="text-xs text-gray-500">SMK Wiworotomo Purwokerto</p>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-3">
         <button
           onClick={() => setDarkMode(!darkMode)}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="clay-button-tertiary p-3"
         >
           {darkMode ? (
-            <Sun className="w-5 h-5 text-gray-600" />
+            <Sun className="w-5 h-5" />
           ) : (
-            <Moon className="w-5 h-5 text-gray-600" />
+            <Moon className="w-5 h-5" />
           )}
         </button>
 
-        <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
-          <Bell className="w-5 h-5 text-gray-600" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+        <button className="clay-button-tertiary p-3 relative">
+          <Bell className="w-5 h-5" />
+          <span className="clay-notification-dot"></span>
         </button>
 
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-gray-600" />
+        <div className="flex items-center space-x-3 clay-card px-4 py-2">
+          <div className="w-8 h-8 clay-icon clay-pink flex items-center justify-center">
+            <User className="w-4 h-4 text-pink-700" />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-900">
@@ -61,9 +63,9 @@ export const Header: React.FC = () => {
 
         <button
           onClick={handleSignOut}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="clay-button-danger p-3"
         >
-          <LogOut className="w-5 h-5 text-gray-600" />
+          <LogOut className="w-5 h-5" />
         </button>
       </div>
     </header>

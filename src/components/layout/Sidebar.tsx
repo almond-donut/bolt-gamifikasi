@@ -25,14 +25,11 @@ export const Sidebar: React.FC = () => {
 
   const adminNavItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-    { icon: Users, label: 'Manage Teachers', path: '/admin/teachers' },
-    { icon: GraduationCap, label: 'Manage Students', path: '/admin/students' },
-    { icon: BookOpen, label: 'Manage Classes', path: '/admin/classes' },
-    { icon: FileText, label: 'Manage Quizzes', path: '/admin/quizzes' },
-    { icon: FileText, label: 'Manage Materials', path: '/admin/materials' },
-    { icon: Trophy, label: 'Achievements', path: '/admin/achievements' },
-    { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-    { icon: Settings, label: 'Settings', path: '/admin/settings' }
+    { icon: Users, label: 'Kelola Pengguna', path: '/admin/teachers' },
+    { icon: BookOpen, label: 'Kelola Kelas', path: '/admin/classes' },
+    { icon: BarChart3, label: 'Analitik', path: '/admin/analytics' },
+    { icon: Trophy, label: 'Pencapaian', path: '/admin/achievements' },
+    { icon: Settings, label: 'Pengaturan', path: '/admin/settings' }
   ]
 
   const teacherNavItems = [
@@ -69,18 +66,20 @@ export const Sidebar: React.FC = () => {
   }
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
-      <nav className="p-4 space-y-2">
+    <aside className="w-64 clay-sidebar min-h-screen p-4 ml-4">
+      <div className="mb-8">
+        <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4 px-4">
+          NAVIGASI
+        </h3>
+      </div>
+      
+      <nav className="space-y-1">
         {getNavItems().map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`
+              `clay-nav-item ${isActive ? 'active' : ''}`
             }
           >
             <item.icon className="w-5 h-5" />
@@ -88,6 +87,28 @@ export const Sidebar: React.FC = () => {
           </NavLink>
         ))}
       </nav>
+
+      {/* User Profile Section */}
+      <div className="absolute bottom-4 left-4 right-4">
+        <div className="clay-card p-4 flex items-center space-x-3">
+          <div className="w-10 h-10 clay-icon clay-pink flex items-center justify-center">
+            <span className="text-pink-700 font-bold text-sm">
+              {user?.profile?.full_name?.charAt(0)?.toUpperCase() || 'A'}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {user?.profile?.full_name || 'Administrator'}
+            </p>
+            <p className="text-xs text-gray-500 capitalize">
+              {user?.profile?.role || 'Admin'}
+            </p>
+          </div>
+          <button className="clay-button-tertiary p-2">
+            <Settings className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </aside>
   )
 }
